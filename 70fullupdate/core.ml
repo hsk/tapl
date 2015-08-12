@@ -207,6 +207,11 @@ let rec eval ctx t =
          with Not_found -> t)
       | _ -> t
       end*)
+  | TmFix(fi,t1) as t ->
+      let t1 = eval ctx t1 in
+      (match t1 with
+         TmAbs(_,_,_,t12) -> eval ctx (termSubstTop t t12)
+       | _ -> t1)
   | _ ->
     try let t' = eval1 ctx t
         in eval ctx t'

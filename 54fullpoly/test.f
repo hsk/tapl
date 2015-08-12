@@ -39,3 +39,7 @@ let {X,ops} = {*Nat, {c=0, f=lambda x:Nat. succ x}}
               as {Some X, {c:X, f:X->Nat}}
 in (ops.f ops.c);
 
+let dbl = fix (lambda dbl:Nat->Nat. lambda e : Nat.
+  if iszero e then 0 else succ(succ(dbl (pred e)))
+)in
+dbl 10;

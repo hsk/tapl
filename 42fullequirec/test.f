@@ -122,4 +122,8 @@ mylist = cons 2 (cons 3 (cons 5 nil));
 
 sumlist mylist;
 
+let dbl = fix (lambda dbl:Nat->Nat. lambda e : Nat.
+  if iszero e then 0 else succ(succ(dbl (pred e)))
+)in
+dbl 10;
 

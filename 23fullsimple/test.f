@@ -45,3 +45,8 @@ let f = lambda x:<a:Nat,b:Nat>.
 in
 let a = <b=1> as <a:Nat,b:Nat> in
 f(a);
+
+let dbl = fix (lambda dbl:Nat->Nat. lambda e : Nat.
+  if iszero e then 0 else succ(succ(dbl (pred e)))
+)in
+dbl 10;

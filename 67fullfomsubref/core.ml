@@ -179,6 +179,11 @@ let bigstep = ref false
 
 let rec eval ctx store t =
   match t with
+  | TmFix(fi,t1) as t ->
+      let t1, store = eval ctx store t1 in
+      (match t1 with
+         TmAbs(_,_,_,t12) -> eval ctx store (termSubstTop t t12)
+       | _ -> t1, store)
   | _ ->
     try let t',store' = eval1 ctx store t
         in eval ctx store' t'

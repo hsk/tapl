@@ -44,3 +44,4 @@ plus : Nat -> Nat -> Nat
 sumlist : NatList -> Nat
 mylist : NatList
 10 : Nat
+20 : Nat

@@ -424,4 +424,8 @@ c = newInstrCounter unit;
 (c.accesses unit);
 
 
+let dbl = fix (lambda dbl:Nat->Nat. lambda e : Nat.
+  if iszero e then 0 else succ(succ(dbl (pred e)))
+)in
+dbl 10;
 

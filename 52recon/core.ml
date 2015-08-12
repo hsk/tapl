@@ -179,7 +179,7 @@ let substinconstr tyX tyT constr =
        (substinty tyX tyT tyS1, substinty tyX tyT tyS2))
     constr
 
-let occursin tyX tyT =
+let occur tyX tyT =
   let rec o tyT = match tyT with
       TyArr(tyT1,tyT2) -> o tyT1 || o tyT2
     | TyNat -> false
@@ -192,14 +192,14 @@ let unify fi ctx msg constr =
       [] -> []
     | (tyS,TyId(tyX)) :: rest ->
         if tyS = TyId(tyX) then u rest
-        else if occursin tyX tyS then
+        else if occur tyX tyS then
           error fi (msg ^ ": circular constraints")
         else
           List.append (u (substinconstr tyX tyS rest)) 
                       [(TyId(tyX),tyS)]
     | (TyId(tyX),tyT) :: rest ->
         if tyT = TyId(tyX) then u rest
-        else if occursin tyX tyT then
+        else if occur tyX tyT then
           error fi (msg ^ ": circular constraints")
         else
           List.append (u (substinconstr tyX tyT rest))

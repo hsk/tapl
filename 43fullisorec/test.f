@@ -46,3 +46,7 @@ p1 = (unfold [Counter] p).inc unit;
 T = Nat->Nat;
 lambda f:T. lambda x:Nat. f (f x);
 
+let dbl = fix (lambda dbl:Nat->Nat. lambda e : Nat.
+  if iszero e then 0 else succ(succ(dbl (pred e)))
+)in
+dbl 10;

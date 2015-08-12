@@ -26,3 +26,4 @@ T :: *
 {*Nat, {c=0,f=lambda x:Nat. (succ x)}} as {Some X, {c:X,f:X->Nat}}
   : {Some X, {c:X,f:X->Nat}}
 1 : Nat
+20 : Nat

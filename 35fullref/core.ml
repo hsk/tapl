@@ -241,6 +241,11 @@ let rec eval ctx store t =
         (match t1 with
             TmLoc(_,l) -> (TmUnit(dummyinfo), updatestore store l t2)
           | _ -> TmAssign(fi, t1, t2), store)
+  | TmFix(fi,t1) as t ->
+      let t1, store = eval ctx store t1 in
+      (match t1 with
+         TmAbs(_,_,_,t12) -> eval ctx store (termSubstTop t t12)
+       | _ -> t1, store)
 
   | _ -> t, store
 

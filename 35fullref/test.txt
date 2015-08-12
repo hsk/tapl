@@ -25,3 +25,4 @@ T :: *
 x : Ref Nat
 unit : Unit
 8 : Nat
+20 : Nat
