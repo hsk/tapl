@@ -79,7 +79,16 @@ let rec eval ctx t =
       (match t1 with
          TmAbs(_,_,_,t12) -> eval ctx (termSubstTop t t12)
        | _ -> t1)
-  | _ -> t
+  | TmAscribe(fi,t1,tyT) ->
+      eval ctx t1
+  | TmTrue _
+  | TmFalse _
+  | TmFloat _
+  | TmString _
+  | TmAbs _
+  | TmZero _
+  | TmUnit _
+  | TmInert _ -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

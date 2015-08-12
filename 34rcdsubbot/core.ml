@@ -34,7 +34,8 @@ let rec eval ctx t =
          with Not_found -> t)
       | _ -> t
       end
-  | t -> t
+  | TmVar _
+  | TmAbs _ -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

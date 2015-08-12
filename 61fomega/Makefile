@@ -22,7 +22,10 @@ DEPEND += lexer.ml parser.ml
 
 # When "make" is invoked with no arguments, we build an executable 
 # typechecker, after building everything that it depends on
-all: $(DEPEND) $(OBJS) f
+all: $(DEPEND) $(OBJS) f README.md
+
+README.md: README.php
+	php README.php > README.md
 
 # On a Windows machine, we do exactly the same except that the executable
 # file that gets built needs to have the extension ".exe"
@@ -49,11 +52,11 @@ test: all
 
 # Compile an ML module interface
 %.cmi : %.mli
-	ocamlc -c $<
+	ocamlc -w @8 -c $<
 
 # Compile an ML module implementation
 %.cmo : %.ml
-	ocamlc -c $<
+	ocamlc -w @8 -c $<
 
 # Generate ML files from a parser definition file
 parser.ml parser.mli: parser.mly

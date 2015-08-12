@@ -31,7 +31,9 @@ let rec eval t =
     | TmZero(_) -> TmTrue(dummyinfo)
     | _ -> TmFalse(dummyinfo)
     end
-  | t -> t
+  | TmZero _ -> t
+  | TmTrue _  -> t
+  | TmFalse _ -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

@@ -1,3 +1,7 @@
+## TAPL ソースリーディング
+
+TAPLのソースを理解するためにソースを書き換えたり名前を変えたりコメントを書いています。
+
 Typechecker Implementations of Types and Programming Languages
 http://www.cis.upenn.edu/~bcpierce/tapl/
 

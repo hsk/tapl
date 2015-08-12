@@ -73,7 +73,12 @@ let rec eval ctx t =
          with Not_found -> t)
       | _ -> t
       end
-  | t -> t
+  | TmTrue _
+  | TmFalse _
+  | TmFloat _
+  | TmString _
+  | TmAbs _
+  | TmZero _ -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

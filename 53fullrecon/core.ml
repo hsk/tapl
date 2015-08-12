@@ -192,7 +192,11 @@ let substinty tyX tyT tyS =
 
 let applysubst constr tyT =
   List.fold_left
-    (fun tyS (TyId(tyX),tyC2) -> substinty tyX tyC2 tyS)
+    (fun tyS (ty,tyC2) ->
+      match ty with
+      | TyId(tyX) -> substinty tyX tyC2 tyS
+      | _ -> assert false
+    )
     tyT (List.rev constr)
 
 let substinconstr tyX tyT constr =

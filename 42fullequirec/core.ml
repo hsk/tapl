@@ -3,6 +3,103 @@ open Syntax
 open Support.Error
 open Support.Pervasive
 
+(* ------------------------   BIG STEP EVALUATION  ------------------------ *)
+let bigstep = ref false
+
+let rec eval ctx t =
+  match t with
+  | TmApp(fi,t1,t2) ->
+      let t1 = eval ctx t1 in
+      let t2 = eval ctx t2 in
+      begin match t1 with
+      | TmAbs(_,x,_,t12) ->
+        eval ctx (termSubstTop t2 t12)
+      | _ -> TmApp(fi, t1, t2)
+      end
+  | TmIf(fi,t1,t2,t3) ->
+      let t1' = eval ctx t1 in
+      begin match t1' with
+      | TmTrue(_) -> eval ctx t2
+      | TmFalse(_) -> eval ctx t3
+      | t -> TmIf(fi, t, t2, t3)
+      end
+  | TmSucc(fi,t1) ->
+    begin match eval ctx t1 with
+    | TmPred(fi, t1) -> t1
+    | t1 -> TmSucc(fi, t1)
+    end
+  | TmPred(fi,t1) ->
+    begin match eval ctx t1 with
+    | TmSucc(fi, t1) -> t1
+    | TmZero(fi) -> TmZero(fi)
+    | t1 -> TmPred(fi, t1)
+    end
+  | TmIsZero(fi,t1) ->
+    begin match eval ctx t1 with
+    | TmZero(_) -> TmTrue(dummyinfo)
+    | _ -> TmFalse(dummyinfo)
+    end
+  | TmVar(fi,n,_) ->
+      (match getbinding fi ctx n with
+        | TmAbbBind(t,_) -> t 
+        | _ -> t
+      )
+  | TmLet(fi,x,t1,t2) ->
+      let t1' = eval ctx t1 in
+      let t2' = termSubstTop t1' t2 in
+      eval ctx t2'
+  
+  | TmTimesfloat(fi,t1,t2) ->
+      let t1' = eval ctx t1 in
+      let t2' = eval ctx t2 in
+      begin match t1',t2' with
+      | TmFloat(_,f1),TmFloat(_,f2) -> TmFloat(fi, f1 *. f2)
+      | _,_ -> TmTimesfloat(dummyinfo, t1', t2')
+      end
+  | TmRecord(fi,fields) ->
+      let rec evalafield = function
+        | [] -> []
+        | (l,ti)::rest -> 
+            let ti' = eval ctx ti in
+            let rest' = evalafield rest in
+            (l, ti')::rest'
+      in
+      let fields' = evalafield fields in
+      TmRecord(fi, fields')
+  | TmProj(fi, t1, l) ->
+      let t1' = eval ctx t1 in
+      begin match t1' with
+      | TmRecord(_, fields) ->
+        (try List.assoc l fields
+         with Not_found -> t)
+      | _ -> t
+      end
+  | TmCase(fi,t1,branches) ->
+      let t1 = eval ctx t1 in
+      (match t1 with
+        | TmTag(_,li,v11,_) ->
+          (try 
+            let (x,body) = List.assoc li branches in
+            termSubstTop v11 body
+          with Not_found -> TmCase(fi,t1,branches))
+        | _ -> TmCase(fi,t1,branches)
+      )
+  | TmFix(fi,t1) as t ->
+      let t1 = eval ctx t1 in
+      (match t1 with
+         TmAbs(_,_,_,t12) -> eval ctx (termSubstTop t t12)
+       | _ -> t1)
+  | TmAscribe _
+  | TmInert _
+  | TmTrue _
+  | TmFalse _
+  | TmFloat _
+  | TmString _
+  | TmAbs _
+  | TmZero _
+  | TmUnit _
+  | TmTag _ -> t
+
 (* ------------------------   EVALUATION  ------------------------ *)
 
 exception NoRuleApplies
@@ -116,97 +213,6 @@ let rec eval1 ctx t = match t with
       in TmFix(fi,t1')
   | _ -> 
       raise NoRuleApplies
-
-(* ------------------------   BIG STEP EVALUATION  ------------------------ *)
-let bigstep = ref false
-
-let rec eval ctx t =
-  match t with
-  | TmApp(fi,t1,t2) ->
-      let t1 = eval ctx t1 in
-      let t2 = eval ctx t2 in
-      begin match t1 with
-      | TmAbs(_,x,_,t12) ->
-        eval ctx (termSubstTop t2 t12)
-      | _ -> TmApp(fi, t1, t2)
-      end
-  | TmIf(fi,t1,t2,t3) ->
-      let t1' = eval ctx t1 in
-      begin match t1' with
-      | TmTrue(_) -> eval ctx t2
-      | TmFalse(_) -> eval ctx t3
-      | t -> TmIf(fi, t, t2, t3)
-      end
-  | TmSucc(fi,t1) ->
-    begin match eval ctx t1 with
-    | TmPred(fi, t1) -> t1
-    | t1 -> TmSucc(fi, t1)
-    end
-  | TmPred(fi,t1) ->
-    begin match eval ctx t1 with
-    | TmSucc(fi, t1) -> t1
-    | TmZero(fi) -> TmZero(fi)
-    | t1 -> TmPred(fi, t1)
-    end
-  | TmIsZero(fi,t1) ->
-    begin match eval ctx t1 with
-    | TmZero(_) -> TmTrue(dummyinfo)
-    | _ -> TmFalse(dummyinfo)
-    end
-  | TmVar(fi,n,_) ->
-      (match getbinding fi ctx n with
-        | TmAbbBind(t,_) -> t 
-        | _ -> t
-      )
-  | TmLet(fi,x,t1,t2) ->
-      let t1' = eval ctx t1 in
-      let t2' = termSubstTop t1' t2 in
-      eval ctx t2'
-  
-  | TmTimesfloat(fi,t1,t2) ->
-      let t1' = eval ctx t1 in
-      let t2' = eval ctx t2 in
-      begin match t1',t2' with
-      | TmFloat(_,f1),TmFloat(_,f2) -> TmFloat(fi, f1 *. f2)
-      | _,_ -> TmTimesfloat(dummyinfo, t1', t2')
-      end
-  | TmRecord(fi,fields) ->
-      let rec evalafield = function
-        | [] -> []
-        | (l,ti)::rest -> 
-            let ti' = eval ctx ti in
-            let rest' = evalafield rest in
-            (l, ti')::rest'
-      in
-      let fields' = evalafield fields in
-      TmRecord(fi, fields')
-  | TmProj(fi, t1, l) ->
-      let t1' = eval ctx t1 in
-      begin match t1' with
-      | TmRecord(_, fields) ->
-        (try List.assoc l fields
-         with Not_found -> t)
-      | _ -> t
-      end
-  | TmCase(fi,t1,branches) ->
-      let t1 = eval ctx t1 in
-      (match t1 with
-        | TmTag(_,li,v11,_) ->
-          (try 
-            let (x,body) = List.assoc li branches in
-            termSubstTop v11 body
-          with Not_found -> TmCase(fi,t1,branches))
-        | _ -> TmCase(fi,t1,branches)
-      )
-  | TmFix(fi,t1) as t ->
-      let t1 = eval ctx t1 in
-      (match t1 with
-         TmAbs(_,_,_,t12) -> eval ctx (termSubstTop t t12)
-       | _ -> t1)
-  | _ ->
-      try let t' = eval1 ctx t
-          in eval ctx t'
-      with NoRuleApplies -> t
 
 let eval ctx t =
   if !bigstep then eval ctx t else

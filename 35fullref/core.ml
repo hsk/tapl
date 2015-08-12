@@ -3,6 +3,124 @@ open Syntax
 open Support.Error
 open Support.Pervasive
 
+type store = term list  
+let emptystore = []
+let extendstore store v = (List.length store, List.append store [v])
+let lookuploc store l = List.nth store l
+let updatestore store n v =
+  let rec f s = match s with 
+      (0, v'::rest) -> v::rest
+    | (n, v'::rest) -> v' :: (f (n-1,rest))
+    | _ -> error dummyinfo "updatestore: bad index"
+  in
+    f (n,store)
+let shiftstore i store = List.map (fun t -> termShift i t) store 
+
+(* ------------------------   BIG STEP EVALUATION  ------------------------ *)
+let bigstep = ref false
+
+let rec eval ctx store t =
+  match t with
+  | TmApp(fi,t1,t2) ->
+      let t1,store = eval ctx store t1 in
+      let t2,store = eval ctx store t2 in
+      begin match t1 with
+      | TmAbs(_,x,_,t12) ->
+        eval ctx store (termSubstTop t2 t12)
+      | _ -> TmApp(fi, t1, t2),store
+      end
+  | TmIf(fi,t1,t2,t3) ->
+      let t1',store = eval ctx store t1 in
+      begin match t1' with
+      | TmTrue(_) -> eval ctx store t2
+      | TmFalse(_) -> eval ctx store t3
+      | t -> TmIf(fi, t, t2, t3), store
+      end
+  | TmSucc(fi,t1) ->
+    begin match eval ctx store t1 with
+    | TmPred(fi, t1), store -> t1, store
+    | t1, store -> TmSucc(fi, t1), store
+    end
+  | TmPred(fi,t1) ->
+    begin match eval ctx store t1 with
+    | TmSucc(fi, t1), store -> t1, store
+    | TmZero(fi), store -> TmZero(fi), store
+    | t1, store -> TmPred(fi, t1), store
+    end
+  | TmIsZero(fi,t1) ->
+    begin match eval ctx store t1 with
+    | TmZero(_), store -> TmTrue(dummyinfo), store
+    | _, store -> TmFalse(dummyinfo), store
+    end
+  | TmVar(fi,n,_) ->
+      (match getbinding fi ctx n with
+        | TmAbbBind(t,_) -> t, store
+        | _ -> t, store
+      )
+  | TmLet(fi,x,t1,t2) ->
+      let t1', store = eval ctx store t1 in
+      let t2' = termSubstTop t1' t2 in
+      eval ctx store t2'
+  
+  | TmTimesfloat(fi,t1,t2) ->
+      let t1', store = eval ctx store t1 in
+      let t2', store = eval ctx store t2 in
+      begin match t1',t2' with
+      | TmFloat(_,f1),TmFloat(_,f2) -> TmFloat(fi, f1 *. f2), store
+      | _,_ -> TmTimesfloat(dummyinfo, t1', t2'), store
+      end
+  | TmRecord(fi,fields) ->
+      let rec evalafield store = function
+        | [] -> [],store
+        | (l,ti)::rest -> 
+            let ti', store = eval ctx store ti in
+            let rest', store = evalafield store rest in
+            (l, ti')::rest', store
+      in
+      let fields', store = evalafield store fields in
+      TmRecord(fi, fields'), store
+  | TmProj(fi, t1, l) ->
+      let t1', store = eval ctx store t1 in
+      begin match t1' with
+      | TmRecord(_, fields) ->
+        (try List.assoc l fields
+         with Not_found -> t), store
+      | t -> t, store
+      end
+  | TmRef(fi,t1) ->
+        let t1, store = eval ctx store t1 in
+        let l, store = extendstore store t1 in
+        TmLoc(dummyinfo, l), store
+  | TmDeref(fi,t1) ->
+        let t1, store = eval ctx store t1 in
+        (match t1 with
+          | TmLoc(_,l) -> (lookuploc store l, store)
+          | t1 -> t1, store)
+  | TmAssign(fi,t1,t2) ->
+        let t1,store = eval ctx store t1 in
+        let t2,store = eval ctx store t2 in
+        (match t1 with
+            TmLoc(_,l) -> (TmUnit(dummyinfo), updatestore store l t2)
+          | _ -> TmAssign(fi, t1, t2), store)
+  | TmFix(fi,t1) as t ->
+      let t1, store = eval ctx store t1 in
+      (match t1 with
+         TmAbs(_,_,_,t12) -> eval ctx store (termSubstTop t t12)
+       | _ -> t1, store)
+  | TmTag _
+  | TmCase _
+  | TmAscribe _
+  | TmTag _
+  | TmLoc _
+  | TmTrue _
+  | TmFalse _
+  | TmFloat _
+  | TmString _
+  | TmAbs _
+  | TmZero _
+  | TmUnit _
+  | TmInert _ -> t, store
+
 (* ------------------------   EVALUATION  ------------------------ *)
 
 let rec isnumericval ctx t = match t with
@@ -22,19 +140,6 @@ let rec isval ctx t = match t with
   | TmAbs(_,_,_,_) -> true
   | TmRecord(_,fields) -> List.for_all (fun (l,ti) -> isval ctx ti) fields
   | _ -> false
-
-type store = term list  
-let emptystore = []
-let extendstore store v = (List.length store, List.append store [v])
-let lookuploc store l = List.nth store l
-let updatestore store n v =
-  let rec f s = match s with 
-      (0, v'::rest) -> v::rest
-    | (n, v'::rest) -> v' :: (f (n-1,rest))
-    | _ -> error dummyinfo "updatestore: bad index"
-  in
-    f (n,store)
-let shiftstore i store = List.map (fun t -> termShift i t) store 
 
 exception NoRuleApplies
 
@@ -154,100 +259,6 @@ let rec eval1 ctx store t = match t with
       TmIsZero(fi, t1'), store'
   | _ -> 
       raise NoRuleApplies
-
-(* ------------------------   BIG STEP EVALUATION  ------------------------ *)
-let bigstep = ref false
-
-let rec eval ctx store t =
-  match t with
-  | TmApp(fi,t1,t2) ->
-      let t1,store = eval ctx store t1 in
-      let t2,store = eval ctx store t2 in
-      begin match t1 with
-      | TmAbs(_,x,_,t12) ->
-        eval ctx store (termSubstTop t2 t12)
-      | _ -> TmApp(fi, t1, t2),store
-      end
-  | TmIf(fi,t1,t2,t3) ->
-      let t1',store = eval ctx store t1 in
-      begin match t1' with
-      | TmTrue(_) -> eval ctx store t2
-      | TmFalse(_) -> eval ctx store t3
-      | t -> TmIf(fi, t, t2, t3), store
-      end
-  | TmSucc(fi,t1) ->
-    begin match eval ctx store t1 with
-    | TmPred(fi, t1), store -> t1, store
-    | t1, store -> TmSucc(fi, t1), store
-    end
-  | TmPred(fi,t1) ->
-    begin match eval ctx store t1 with
-    | TmSucc(fi, t1), store -> t1, store
-    | TmZero(fi), store -> TmZero(fi), store
-    | t1, store -> TmPred(fi, t1), store
-    end
-  | TmIsZero(fi,t1) ->
-    begin match eval ctx store t1 with
-    | TmZero(_), store -> TmTrue(dummyinfo), store
-    | _, store -> TmFalse(dummyinfo), store
-    end
-  | TmVar(fi,n,_) ->
-      (match getbinding fi ctx n with
-        | TmAbbBind(t,_) -> t, store
-        | _ -> t, store
-      )
-  | TmLet(fi,x,t1,t2) ->
-      let t1', store = eval ctx store t1 in
-      let t2' = termSubstTop t1' t2 in
-      eval ctx store t2'
-  
-  | TmTimesfloat(fi,t1,t2) ->
-      let t1', store = eval ctx store t1 in
-      let t2', store = eval ctx store t2 in
-      begin match t1',t2' with
-      | TmFloat(_,f1),TmFloat(_,f2) -> TmFloat(fi, f1 *. f2), store
-      | _,_ -> TmTimesfloat(dummyinfo, t1', t2'), store
-      end
-  | TmRecord(fi,fields) ->
-      let rec evalafield store = function
-        | [] -> [],store
-        | (l,ti)::rest -> 
-            let ti', store = eval ctx store ti in
-            let rest', store = evalafield store rest in
-            (l, ti')::rest', store
-      in
-      let fields', store = evalafield store fields in
-      TmRecord(fi, fields'), store
-  | TmProj(fi, t1, l) ->
-      let t1', store = eval ctx store t1 in
-      begin match t1' with
-      | TmRecord(_, fields) ->
-        (try List.assoc l fields
-         with Not_found -> t), store
-      | t -> t, store
-      end
-  | TmRef(fi,t1) ->
-        let t1, store = eval ctx store t1 in
-        let l, store = extendstore store t1 in
-        TmLoc(dummyinfo, l), store
-  | TmDeref(fi,t1) ->
-        let t1, store = eval ctx store t1 in
-        (match t1 with
-          | TmLoc(_,l) -> (lookuploc store l, store)
-          | t1 -> t1, store)
-  | TmAssign(fi,t1,t2) ->
-        let t1,store = eval ctx store t1 in
-        let t2,store = eval ctx store t2 in
-        (match t1 with
-            TmLoc(_,l) -> (TmUnit(dummyinfo), updatestore store l t2)
-          | _ -> TmAssign(fi, t1, t2), store)
-  | TmFix(fi,t1) as t ->
-      let t1, store = eval ctx store t1 in
-      (match t1 with
-         TmAbs(_,_,_,t12) -> eval ctx store (termSubstTop t t12)
-       | _ -> t1, store)
-
-  | _ -> t, store
 
 let eval ctx store t =
   if !bigstep then eval ctx store t else

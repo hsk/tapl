@@ -16,7 +16,8 @@ let rec eval ctx t =
         eval ctx (termSubstTop t2 t12)
       | _ -> TmApp(fi, t1, t2)
       end
-  | t -> t
+  | TmAbs(_,_,_) -> t
+  | TmVar(_,_,_) -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

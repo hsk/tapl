@@ -23,7 +23,9 @@ let rec eval ctx t =
         eval ctx (termSubstTop t2 t12)
       | _ -> TmApp(fi, t1, t2)
       end
-  | _ -> t
+  | TmVar _
+  | TmAbs _
+  | TmTAbs _ -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

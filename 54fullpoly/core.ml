@@ -196,6 +196,8 @@ let rec eval ctx t =
       (match t1 with
          TmAbs(_,_,_,t12) -> eval ctx (termSubstTop t t12)
        | _ -> t1)
+  | TmAscribe(fi,t1,tyT) ->
+      eval ctx t1
   | _ ->
     try let t' = eval1 ctx t
         in eval ctx t'

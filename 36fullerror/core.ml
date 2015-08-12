@@ -30,7 +30,11 @@ let rec eval ctx t =
         | TmAbbBind(t,_) -> t 
         | _ -> t
       )
-  | _ -> t
+  | TmTry _
+  | TmError _
+  | TmTrue _
+  | TmFalse _
+  | TmAbs _ -> t
 
 (* ------------------------   EVALUATION  ------------------------ *)
 

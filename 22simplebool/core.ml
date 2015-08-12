@@ -23,8 +23,10 @@ let rec eval ctx t =
       | TmFalse(_) -> eval ctx t3
       | _ -> t
       end
-  | t -> t
-
+  | TmTrue _
+  | TmFalse _
+  | TmAbs _
+  | TmVar _ -> t
 (* ------------------------   EVALUATION  ------------------------ *)
 
 let rec isval ctx t = match t with

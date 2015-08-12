@@ -61,33 +61,33 @@ clean:
 	cd letexercise ; make clean
 	rm -rf Node_modules
 test:
-	cd 11arith ; make test
-	cd 12untyped ; make test
-	cd 13fulluntyped ; make test
-	cd 21tyarith ; make test
-	cd 22simplebool ; make test
-	cd 23fullsimple ; make test
-	cd 31purefsub ; make test
-	cd 32fullsub ; make test
-	cd 33bot ; make test
-	cd 34rcdsubbot ; make test
-	cd 35fullref ; make test
-	cd 36fullerror ; make test
-	cd 41equirec ; make test
-	cd 42fullequirec ; make test
-	cd 43fullisorec ; make test
-	cd 51reconbase ; make test
-	cd 52recon ; make test
-	cd 53fullrecon ; make test
-	cd 54fullpoly ; make test
-	cd 61fomega ; make test
-	cd 62fullomega ; make test
-	cd 63fullfsub ; make test
-	cd 64fullfsubref ; make test
-	cd 65fomsub ; make test
-	cd 66fullfomsub ; make test
-	cd 67fullfomsubref ; make test
-	cd 70fullupdate ; make test
+	echo "----" ; cd 11arith ; make test
+	echo "----" ; cd 12untyped ; make test
+	echo "----" ; cd 13fulluntyped ; make test
+	echo "----" ; cd 21tyarith ; make test
+	echo "----" ; cd 22simplebool ; make test
+	echo "----" ; cd 23fullsimple ; make test
+	echo "----" ; cd 31purefsub ; make test
+	echo "----" ; cd 32fullsub ; make test
+	echo "----" ; cd 33bot ; make test
+	echo "----" ; cd 34rcdsubbot ; make test
+	echo "----" ; cd 35fullref ; make test
+	echo "----" ; cd 36fullerror ; make test
+	echo "----" ; cd 41equirec ; make test
+	echo "----" ; cd 42fullequirec ; make test
+	echo "----" ; cd 43fullisorec ; make test
+	echo "----" ; cd 51reconbase ; make test
+	echo "----" ; cd 52recon ; make test
+	echo "----" ; cd 53fullrecon ; make test
+	echo "----" ; cd 54fullpoly ; make test
+	echo "----" ; cd 61fomega ; make test
+	echo "----" ; cd 62fullomega ; make test
+	echo "----" ; cd 63fullfsub ; make test
+	echo "----" ; cd 64fullfsubref ; make test
+	echo "----" ; cd 65fomsub ; make test
+	echo "----" ; cd 66fullfomsub ; make test
+	echo "----" ; cd 67fullfomsubref ; make test
+	echo "----" ; cd 70fullupdate ; make test
 #	cd joinexercise ; make test
 #	cd letexercise ; make test
 	osascript -e 'display notification "test ok" with title "Make test" subtitle "" sound name "Purr"'
