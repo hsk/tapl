@@ -1,0 +1,11 @@
+{
+  "name": "tapl",
+  "version": "1.0.0",
+  "description": "Typechecker Implementations of Types and Programming Languages http://www.cis.upenn.edu/~bcpierce/tapl/",
+  "license": "ISC",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-exec": "^0.4.6"
+  }
+}

@@ -1,0 +1,6 @@
+true => true
+(if false then true else false) => false
+0 => 0
+(succ (pred 0)) => 1
+(iszero (pred 2)) => false
+(succ (succ (pred 1))) => 2
